@@ -62,7 +62,7 @@ class Cluster:
     def glides(
         segments: list[str],
         cv_profile: list[str],
-        cluster_between_vowels: tuple[str, ...] = ("ɣ", "w", "v"),
+        cluster_between_vowels: tuple[str, ...] = ("ɣ", "w", "v", "β", "ð"),
         cluster_after_l: tuple[str, ...] = ("t͡ʃ", "d"),
     ) -> list[str]:
         """Cluster glides/liquids between vowels and selected consonants after ``l``.
@@ -89,7 +89,8 @@ class Cluster:
         Notes
         -----
         Used in **CLDF conversion** (e.g. UESz-year-origin ``Cluster_glide`` column,
-        WestOldTurkic ``Clusters``).
+        WestOldTurkic and koeblergothic ``Clusters``). Default glide symbols include
+        Gothic intervocalic ``β`` and ``ð``.
         """
         if len(segments) != len(cv_profile):
             raise ValueError("segments and cv_profile must have the same length")
