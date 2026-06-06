@@ -13,6 +13,9 @@ When building a CLDF ``forms.csv``, cluster segments for alignment columns::
    clusters = Cluster.cv(segments, cv)
    # ['f.l', 'a']
 
+   glides = Cluster.glides(segments, cv)
+   hun_clusters = Cluster.liquid(glides)
+
 Mine sound correspondences
 --------------------------
 

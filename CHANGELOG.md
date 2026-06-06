@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Cluster.liquid` for Hungarian `l.d` / `l.t͡ʃ` clustering (split from `Cluster.glides`).
 - Modular package layout: `cluster`, `uralign`, `adapt`, `correspondences`, `edit`, `phonotactics`.
 - Public API re-exports in `loanpy.__init__` with `__version__`.
 - Sphinx documentation and Read the Docs configuration.
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking:** `Cluster.glides` no longer clusters consonants after `l`; use `Cluster.liquid` instead.
 - **Breaking:** Removed legacy modules (`core`, `scminer`, `scapplier`, bundled `ipa_all.csv`).
 - **Breaking:** `get_correspondences` replaced by `get_sound_correspondences` (paired cognate rows, richer output dict).
 - Zero third-party runtime dependencies (stdlib only).

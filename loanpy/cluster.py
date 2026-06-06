@@ -1,5 +1,8 @@
 """Phoneme clustering: CV grouping, glide clustering, and gap collapsing."""
 
+CLUSTER_BETWEEN_VOWELS = ("ɣ", "w", "v", "β", "ð")
+LIQUID_AFTER_L = ("t͡ʃ", "d")
+
 
 class Cluster:
     """Static helpers for segment clustering in CLDF pipelines.
@@ -16,6 +19,7 @@ class Cluster:
         cv = dataset.get_cv_profile(form)
         clusters = Cluster.cv(segments, cv)
         glides = Cluster.glides(segments, cv)
+        hun_clusters = Cluster.liquid(glides)
 
     After pairwise alignment, gaps may be collapsed::
 
@@ -62,10 +66,9 @@ class Cluster:
     def glides(
         segments: list[str],
         cv_profile: list[str],
-        cluster_between_vowels: tuple[str, ...] = ("ɣ", "w", "v", "β", "ð"),
-        cluster_after_l: tuple[str, ...] = ("t͡ʃ", "d"),
+        cluster_between_vowels: tuple[str, ...] = CLUSTER_BETWEEN_VOWELS,
     ) -> list[str]:
-        """Cluster glides/liquids between vowels and selected consonants after ``l``.
+        """Cluster glides between vowels.
 
         Parameters
         ----------
@@ -73,8 +76,6 @@ class Cluster:
             Parallel segment and C/V lists (same length).
         cluster_between_vowels:
             Segments to attach to a preceding vowel cluster when sandwiched by vowels.
-        cluster_after_l:
-            Segments to attach when immediately following ``l``.
 
         Returns
         -------
@@ -90,7 +91,8 @@ class Cluster:
         -----
         Used in **CLDF conversion** (e.g. UESz-year-origin ``Cluster_glide`` column,
         WestOldTurkic and koeblergothic ``Clusters``). Default glide symbols include
-        Gothic intervocalic ``β`` and ``ð``.
+        Gothic intervocalic ``β`` and ``ð``. For Hungarian ``l.d`` / ``l.t͡ʃ`` clusters,
+        call :meth:`liquid` after :meth:`glides`.
         """
         if len(segments) != len(cv_profile):
             raise ValueError("segments and cv_profile must have the same length")
@@ -101,14 +103,6 @@ class Cluster:
                 idx != 0
                 and phoneme in cluster_between_vowels
                 and cv_profile[idx - 1] == "V"
-            ):
-                cluster2[-1] += f".{phoneme}"
-                profile2[-1] += f".{cv_profile[idx]}"
-            elif (
-                idx != 0
-                and phoneme in cluster_after_l
-                and len(cluster2) > 0
-                and cluster2[-1] == "l"
             ):
                 cluster2[-1] += f".{phoneme}"
                 profile2[-1] += f".{cv_profile[idx]}"
@@ -127,6 +121,42 @@ class Cluster:
             else:
                 cluster3.append(phoneme)
         return cluster3
+
+    @staticmethod
+    def liquid(
+        segments: list[str],
+        cluster_after_l: tuple[str, ...] = LIQUID_AFTER_L,
+    ) -> list[str]:
+        """Cluster selected consonants immediately following ``l``.
+
+        Parameters
+        ----------
+        segments:
+            Segment list, typically after :meth:`glides`.
+        cluster_after_l:
+            Segments to attach when immediately following ``l``.
+
+        Returns
+        -------
+        list[str]
+            Further clustered segment list.
+
+        Notes
+        -----
+        Used in **CLDF conversion** for Hungarian ``Monogap`` alignments in
+        WestOldTurkic (after :meth:`glides` on the Hungarian side).
+        """
+        result = []
+        for idx, phoneme in enumerate(segments):
+            if (
+                idx != 0
+                and phoneme in cluster_after_l
+                and result[-1] == "l"
+            ):
+                result[-1] += f".{phoneme}"
+            else:
+                result.append(phoneme)
+        return result
 
     @staticmethod
     def gaps(seqA: list[str], seqB: list[str]) -> tuple[list[str], list[str]]:

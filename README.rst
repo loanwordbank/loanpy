@@ -28,7 +28,7 @@ Pure Python 3.9+ with **no runtime dependencies**.
 Features
 --------
 
-* **Segment clustering** — ``Cluster.cv``, ``Cluster.glides``, ``Cluster.gaps``
+* **Segment clustering** — ``Cluster.cv``, ``Cluster.glides``, ``Cluster.liquid``, ``Cluster.gaps``
 * **Alignment** — ``Uralign.hu``, ``Uralign.get_score``
 * **Sound correspondences** — ``get_sound_correspondences``, ``add_separator``
 * **Adaptation** — ``Adapt`` (substitution + phonotactic repair)
