@@ -1,7 +1,7 @@
 """Phoneme clustering: CV grouping, glide clustering, and gap collapsing."""
 
 CLUSTER_BETWEEN_VOWELS = ("ɣ", "w", "v", "β", "ð")
-LIQUID_AFTER_L = ("t͡ʃ", "d")
+CLUSTER_AFTER_L = ("t͡ʃ", "d")
 
 
 class Cluster:
@@ -125,7 +125,7 @@ class Cluster:
     @staticmethod
     def liquid(
         segments: list[str],
-        cluster_after_l: tuple[str, ...] = LIQUID_AFTER_L,
+        cluster_after_l: tuple[str, ...] = CLUSTER_AFTER_L,
     ) -> list[str]:
         """Cluster selected consonants immediately following ``l``.
 
