@@ -16,12 +16,13 @@ from loanpy.edit import (
     substitute_operations,
 )
 from loanpy.phonotactics import expand_phonotactics, get_closest_phonotactics
-from loanpy.uralign import Uralign
+from loanpy.align import Altign, Uralign
 
 __version__ = "4.0.0"
 
 __all__ = [
     "Adapt",
+    "Altign",
     "Cluster",
     "Uralign",
     "__version__",

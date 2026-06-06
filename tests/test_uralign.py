@@ -1,4 +1,4 @@
-"""Tests for loanpy.uralign."""
+"""Tests for loanpy.align.Uralign."""
 
 from loanpy import Uralign
 

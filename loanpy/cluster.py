@@ -21,10 +21,6 @@ class Cluster:
         glides = Cluster.glides(segments, cv)
         hun_clusters = Cluster.liquid(glides)
 
-    After pairwise alignment, gaps may be collapsed::
-
-        alm_a, alm_b = Cluster.gaps(alm_a, alm_b)
-
     Notes
     -----
     Used in **CLDF conversion** scripts (``cldfbench_*.py``) for datasets such as
@@ -157,38 +153,3 @@ class Cluster:
             else:
                 result.append(phoneme)
         return result
-
-    @staticmethod
-    def gaps(seqA: list[str], seqB: list[str]) -> tuple[list[str], list[str]]:
-        """Collapse consecutive gaps on ``seqB`` into a single gap per position.
-
-        When two adjacent positions in ``seqB`` are gaps (``"-"``), the matching
-        symbol in ``seqA`` is merged into the previous token. Trailing gaps may
-        introduce a ``"+"`` marker in ``seqA``.
-
-        Parameters
-        ----------
-        seqA, seqB:
-            Parallel aligned token lists.
-
-        Returns
-        -------
-        tuple[list[str], list[str]]
-            Collapsed alignment pair.
-
-        Notes
-        -----
-        Used in **CLDF conversion** for WestOldTurkic (``Monogap`` alignments) after
-        global pairwise alignment.
-        """
-        seqA_new, seqB_new = [], []
-        for idx, (tokA, tokB) in enumerate(zip(seqA, seqB)):
-            if idx != 0 and tokB == "-" and seqB_new[-1] == "-":
-                seqA_new[-1] += f".{tokA}"
-            else:
-                seqA_new.append(tokA)
-                seqB_new.append(tokB)
-        if seqB_new[-1] == "-":
-            seqA_new.insert(-1, "+")
-            seqB_new.pop(-1)
-        return seqA_new, seqB_new

@@ -30,8 +30,8 @@ What is covered
 Tests exercise the public API end-to-end:
 
 * **edit** — LCS-based distance, DP matrix, shortest path, edit operations
-* **cluster** — CV clustering, glide clustering, gap collapsing
-* **uralign** — sequential alignment and scorer aggregation
+* **cluster** — CV clustering, glide clustering, liquid clustering
+* **align** — ``Uralign`` sequential alignment; ``Altign`` gap collapsing and cluster-aware scoring
 * **correspondences** — alternating-row validation and correspondence mining
 * **phonotactics** — template expansion and nearest-template selection
 * **adapt** — substitution learning, mapping, and repair

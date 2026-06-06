@@ -91,7 +91,7 @@ def get_sound_correspondences(
     -----
     * **Quantitative analysis** — ``make_results.py`` in the Indo-Iranian–Hungarian
       study calls this on CLDF cognate tables to build TOML scorers and in-memory
-      weights for :class:`~loanpy.uralign.Uralign`.
+      weights for :class:`~loanpy.align.Uralign` and :class:`~loanpy.align.Altign`.
     * **CLDF workflows** — training data from any wordlist with alternating
       descendant/ancestor rows and an alignment column can be passed in; no
       hard-coded language names are required.

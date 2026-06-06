@@ -7,7 +7,7 @@ Package overview
 .. automodule:: loanpy.cluster
    :members:
 
-.. automodule:: loanpy.uralign
+.. automodule:: loanpy.align
    :members:
 
 .. automodule:: loanpy.adapt

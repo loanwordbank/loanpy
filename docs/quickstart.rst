@@ -32,7 +32,7 @@ From cognate rows that alternate descendant / ancestor languages::
 Score an alignment
 ------------------
 
-::
+Prosody-aware pairwise alignment (UEW, Seima–Turbino)::
 
    from loanpy import Uralign
 
@@ -40,6 +40,13 @@ Score an alignment
    seq_a = ["j", "ŋ"]
    alm_d, alm_a = Uralign.hu(seq_d.copy(), seq_a.copy(), "C", "C")
    score = Uralign.get_score(alm_d, alm_a, scorer, freq_filter=2)
+
+Global alignment with gap collapsing and cluster-aware scoring (Gothic, Turkic)::
+
+   from loanpy import Altign
+
+   alm_hun, alm_donor = Altign.gaps(alm_hun, alm_donor)
+   score = Altign.get_score(alm_hun, alm_donor, scorer, freq_filter=2)
 
 Adapt donor segments
 --------------------
@@ -56,10 +63,10 @@ Adapt donor segments
 Typical integrations
 --------------------
 
-* **CLDF conversion** — ``cldfbench`` dataset modules call ``Cluster`` and
-  ``Uralign`` when writing segmentation and alignment columns.
+* **CLDF conversion** — ``cldfbench`` dataset modules call ``Cluster``,
+  ``Uralign``, and ``Altign`` when writing segmentation and alignment columns.
 * **Loanword detection pipelines** — analysis scripts combine ``Adapt``,
-  ``Uralign``, and ``get_sound_correspondences`` over wordlist/cognate tables.
+  ``Uralign``, ``Altign``, and ``get_sound_correspondences`` over wordlist/cognate tables.
 
 These patterns apply to any paired descendant–ancestor data; language names and
 file layouts are project-specific.

@@ -72,33 +72,3 @@ class TestClusterLiquid:
         out = Cluster.liquid(Cluster.glides(segments, cv, cluster_between_vowels=()))
         assert out == ["l.t͡ʃ", "a"]
 
-
-class TestClusterGaps:
-    def test_collapses_consecutive_gaps_on_b(self):
-        seq_a = ["x", "y", "z"]
-        seq_b = ["a", "-", "-"]
-        a2, b2 = Cluster.gaps(seq_a, seq_b)
-        assert a2 == ["x", "+", "y.z"]
-        assert b2 == ["a"]
-
-    def test_trailing_gap_inserts_plus_marker(self):
-        seq_a = ["a", "b", "c"]
-        seq_b = ["x", "y", "-"]
-        a2, b2 = Cluster.gaps(seq_a, seq_b)
-        assert "+" in a2
-        assert b2[-1] != "-"
-
-    def test_no_trailing_gap_no_plus_marker(self):
-        seq_a = ["a", "b"]
-        seq_b = ["x", "y"]
-        a2, b2 = Cluster.gaps(seq_a, seq_b)
-        assert a2 == ["a", "b"]
-        assert b2 == ["x", "y"]
-        assert "+" not in a2
-
-    def test_trailing_single_gap_adds_plus(self):
-        seq_a = ["a", "b"]
-        seq_b = ["x", "-"]
-        a2, b2 = Cluster.gaps(seq_a, seq_b)
-        assert a2 == ["a", "+", "b"]
-        assert b2 == ["x"]

@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `Cluster.liquid` for Hungarian `l.d` / `l.t͡ʃ` clustering (split from `Cluster.glides`).
-- Modular package layout: `cluster`, `uralign`, `adapt`, `correspondences`, `edit`, `phonotactics`.
+- `Altign` class with `gaps` and cluster-aware `get_score` for global-alignment pipelines.
+- Modular package layout: `cluster`, `align`, `adapt`, `correspondences`, `edit`, `phonotactics`.
 - Public API re-exports in `loanpy.__init__` with `__version__`.
 - Sphinx documentation and Read the Docs configuration.
 - Pytest suite with coverage reporting.
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `get_correspondences` replaced by `get_sound_correspondences` (paired cognate rows, richer output dict).
 - Zero third-party runtime dependencies (stdlib only).
 - `Uralign` and `Cluster` APIs consolidated from earlier monolithic `core.py`.
+- **Breaking:** `uralign` module renamed to `align`; `Cluster.gaps` moved to `Altign.gaps`.
 
 ### Migration from 3.x
 

@@ -28,8 +28,8 @@ Pure Python 3.9+ with **no runtime dependencies**.
 Features
 --------
 
-* **Segment clustering** — ``Cluster.cv``, ``Cluster.glides``, ``Cluster.liquid``, ``Cluster.gaps``
-* **Alignment** — ``Uralign.hu``, ``Uralign.get_score``
+* **Segment clustering** — ``Cluster.cv``, ``Cluster.glides``, ``Cluster.liquid``
+* **Alignment** — ``Uralign.hu``, ``Uralign.get_score``, ``Altign.gaps``, ``Altign.get_score``
 * **Sound correspondences** — ``get_sound_correspondences``, ``add_separator``
 * **Adaptation** — ``Adapt`` (substitution + phonotactic repair)
 * **Edit distance** — insertion/deletion distance, DP matrix, shortest path
@@ -69,7 +69,7 @@ Quick example
 ::
 
     from collections import defaultdict
-    from loanpy import Cluster, get_sound_correspondences, Uralign
+    from loanpy import Altign, Cluster, get_sound_correspondences, Uralign
 
     clusters = Cluster.cv(["f", "l", "a"], ["C", "C", "V"])
     # ['f.l', 'a']
@@ -95,7 +95,7 @@ Package layout
 Module                        Main symbols
 ============================= ================================================
 ``loanpy.cluster``            ``Cluster``
-``loanpy.uralign``            ``Uralign``
+``loanpy.align``              ``Uralign``, ``Altign``
 ``loanpy.adapt``              ``Adapt``
 ``loanpy.correspondences``    ``get_sound_correspondences``, ``add_separator``
 ``loanpy.edit``               edit distance utilities
