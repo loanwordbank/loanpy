@@ -6,6 +6,7 @@ from loanpy.correspondences import (
     _is_alternating_language_sequence,
     add_separator,
     get_sound_correspondences,
+    load_scorer,
 )
 
 
@@ -63,6 +64,72 @@ class TestAddSeparator:
         assert out["Cognateset_IDs"] == {"a < b": ["1"]}
         assert out["Examples"] == {"a < b": ["a < b"]}
         assert correspondences["AbsoluteFrequency"] == {("a", "b"): 3}
+
+
+class TestLoadScorer:
+    def test_parses_absolute_frequency(self):
+        assert dict(load_scorer({
+            "AbsoluteFrequency": {"a < b": 3, "ɟ < j": 1},
+        })) == {("a", "b"): 3, ("ɟ", "j"): 1}
+
+    def test_empty_returns_defaultdict(self):
+        assert dict(load_scorer({})) == {}
+        assert dict(load_scorer({"AbsoluteFrequency": {}})) == {}
+
+    def test_custom_separator(self):
+        assert dict(load_scorer(
+            {"AbsoluteFrequency": {"a|b": 2}},
+            sep="|",
+        )) == {("a", "b"): 2}
+
+    def test_missing_default_for_unknown_pairs(self):
+        scorer = load_scorer(
+            {"AbsoluteFrequency": {"a < b": 1}},
+            missing=-1000,
+        )
+        assert scorer[("a", "b")] == 1
+        assert scorer[("x", "y")] == -1000
+
+    def test_sound_correspondences_fallback(self):
+        scorer = load_scorer(
+            {
+                "SoundCorrespondences": {
+                    "a": ["b", "c"],
+                    "k": ["k"],
+                },
+            },
+            imputed=12,
+        )
+        assert dict(scorer) == {("a", "b"): 12, ("a", "c"): 12, ("k", "k"): 12}
+
+    def test_absolute_frequency_takes_precedence_over_fallback(self):
+        scorer = load_scorer(
+            {
+                "AbsoluteFrequency": {"a < b": 3},
+                "SoundCorrespondences": {"a": ["c"]},
+            },
+            imputed=12,
+        )
+        assert dict(scorer) == {("a", "b"): 3}
+
+    def test_roundtrip_with_add_separator(self):
+        correspondences = {
+            "SoundCorrespondences": {"k": ["k", "o"]},
+            "AbsoluteFrequency": {("k", "k"): 2, ("a", "o"): 1},
+        }
+        exported = add_separator(correspondences)
+        loaded = dict(load_scorer(exported))
+        assert loaded == correspondences["AbsoluteFrequency"]
+
+    def test_roundtrip_after_get_sound_correspondences(self):
+        table = [
+            _row("d", "k a", "1"),
+            _row("a", "k o", "1"),
+        ]
+        stats = get_sound_correspondences(table, "Uralign")
+        exported = add_separator(stats)
+        loaded = dict(load_scorer(exported))
+        assert loaded == stats["AbsoluteFrequency"]
 
 
 class TestGetSoundCorrespondences:

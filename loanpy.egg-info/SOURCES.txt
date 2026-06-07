@@ -5,11 +5,11 @@ README.rst
 pyproject.toml
 loanpy/__init__.py
 loanpy/adapt.py
+loanpy/align.py
 loanpy/cluster.py
 loanpy/correspondences.py
 loanpy/edit.py
 loanpy/phonotactics.py
-loanpy/uralign.py
 loanpy.egg-info/PKG-INFO
 loanpy.egg-info/SOURCES.txt
 loanpy.egg-info/dependency_links.txt

@@ -26,8 +26,17 @@ From cognate rows that alternate descendant / ancestor languages::
 
    with open("cognates.csv", encoding="utf-8") as f:
        rows = list(csv.DictReader(f))
-   stats = get_sound_correspondences(rows, aligned_col="Uralign", sep=" < ")
+   stats = get_sound_correspondences(rows, aligned_col="Uralign")
    scorer = stats["AbsoluteFrequency"]
+
+Load a TOML scorer written with :func:`add_separator`::
+
+   import tomllib
+   from loanpy import load_scorer
+
+   with open("scorers/globalign.toml", "rb") as f:
+       data = tomllib.load(f)
+   scorer = load_scorer(data, missing=-1000, imputed=12)
 
 Score an alignment
 ------------------

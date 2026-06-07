@@ -48,6 +48,32 @@ def add_separator(
     return out
 
 
+def load_scorer(
+    data: Mapping[str, object],
+    *,
+    sep: str = " < ",
+    missing: int | float = -1000,
+    imputed: int | float = 1,
+) -> defaultdict[tuple[str, str], int | float]:
+    """Load a segment-pair scorer from a TOML scorer dict.
+
+    Uses ``AbsoluteFrequency`` when present (as written by :func:`add_separator`).
+    Otherwise, when *imputed* is given, builds flat scores from
+    ``SoundCorrespondences`` (presence-only scorers such as hand-edited tables).
+    Unlisted pairs map to *missing*.
+    """
+    pairs: dict[tuple[str, str], int | float] = {}
+    if freq := data.get("AbsoluteFrequency", {}):
+        for pair_key, count in freq.items():
+            source, target = pair_key.split(sep, 1)
+            pairs[(source, target)] = count
+    else:
+        for source, targets in data.get("SoundCorrespondences", {}).items():
+            for target in targets:
+                pairs[(source, target)] = imputed
+    return defaultdict(lambda: missing, pairs)
+
+
 def get_sound_correspondences(
     table: Sequence[Mapping[str, str]],
     aligned_col: str,
@@ -86,6 +112,15 @@ def get_sound_correspondences(
         rows = list(csv.DictReader(open("cognates.csv", encoding="utf-8")))
         stats = get_sound_correspondences(rows, "Uralign")
         scorer = stats["AbsoluteFrequency"]
+
+    Reload the same weights from a TOML scorer file::
+
+        import tomllib
+        from loanpy.correspondences import add_separator, load_scorer
+
+        with open("globalign.toml", "rb") as f:
+            data = tomllib.load(f)
+        scorer = load_scorer(data, missing=-1000, imputed=12)
 
     Notes
     -----

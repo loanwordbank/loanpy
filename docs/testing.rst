@@ -32,7 +32,7 @@ Tests exercise the public API end-to-end:
 * **edit** — LCS-based distance, DP matrix, shortest path, edit operations
 * **cluster** — CV clustering, glide clustering, liquid clustering
 * **align** — ``Uralign`` sequential alignment; ``Altign`` gap collapsing and cluster-aware scoring
-* **correspondences** — alternating-row validation and correspondence mining
+* **correspondences** — alternating-row validation, correspondence mining, TOML export/load round-trip
 * **phonotactics** — template expansion and nearest-template selection
 * **adapt** — substitution learning, mapping, and repair
 * **package** — version string and ``__all__`` exports

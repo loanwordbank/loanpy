@@ -4,7 +4,7 @@ import csv
 import io
 from collections import defaultdict
 
-from loanpy import Adapt, Cluster, Uralign, add_separator, get_sound_correspondences
+from loanpy import Adapt, Cluster, Uralign, add_separator, get_sound_correspondences, load_scorer
 
 
 class TestCldfStyleClustering:
@@ -51,6 +51,9 @@ class TestCorrespondenceToScoring:
         exported = add_separator(stats)
         assert "k < k" in exported["AbsoluteFrequency"]
         assert ("k", "k") in stats["AbsoluteFrequency"]
+        assert dict(load_scorer(exported)) == stats[
+            "AbsoluteFrequency"
+        ]
 
 
 class TestMakeResultsStyleAdaptation:

@@ -30,7 +30,7 @@ Features
 
 * **Segment clustering** — ``Cluster.cv``, ``Cluster.glides``, ``Cluster.liquid``
 * **Alignment** — ``Uralign.hu``, ``Uralign.get_score``, ``Altign.gaps``, ``Altign.get_score``
-* **Sound correspondences** — ``get_sound_correspondences``, ``add_separator``
+* **Sound correspondences** — ``get_sound_correspondences``, ``add_separator``, ``load_scorer``
 * **Adaptation** — ``Adapt`` (substitution + phonotactic repair)
 * **Edit distance** — insertion/deletion distance, DP matrix, shortest path
 * **Phonotactics** — ``expand_phonotactics``, ``get_closest_phonotactics``
@@ -69,15 +69,20 @@ Quick example
 ::
 
     from collections import defaultdict
-    from loanpy import Altign, Cluster, get_sound_correspondences, Uralign
-
-    clusters = Cluster.cv(["f", "l", "a"], ["C", "C", "V"])
-    # ['f.l', 'a']
+    from loanpy import (
+        add_separator,
+        get_sound_correspondences,
+        load_scorer,
+        Uralign,
+    )
 
     rows = [...]  # cognate table, descendant/ancestor alternating
     stats = get_sound_correspondences(rows, "Uralign")
     scorer = defaultdict(lambda: -1000, stats["AbsoluteFrequency"])
     # scorer[("a", "b")]  — tuple keys for Uralign.get_score and LingPy pw_align
+
+    # After writing a TOML scorer with add_separator + toml.dump:
+    # scorer = load_scorer(toml_data, missing=-1000, imputed=12)
 
 Typical use
 -----------
@@ -97,7 +102,7 @@ Module                        Main symbols
 ``loanpy.cluster``            ``Cluster``
 ``loanpy.align``              ``Uralign``, ``Altign``
 ``loanpy.adapt``              ``Adapt``
-``loanpy.correspondences``    ``get_sound_correspondences``, ``add_separator``
+``loanpy.correspondences``    ``get_sound_correspondences``, ``add_separator``, ``load_scorer``
 ``loanpy.edit``               edit distance utilities
 ``loanpy.phonotactics``       ``expand_phonotactics``, ``get_closest_phonotactics``
 ============================= ================================================

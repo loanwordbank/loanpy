@@ -85,10 +85,10 @@ class Cluster:
 
         Notes
         -----
-        Used in **CLDF conversion** (e.g. UESz-year-origin ``Cluster_glide`` column,
-        WestOldTurkic and koeblergothic ``Clusters``). Default glide symbols include
-        Gothic intervocalic ``β`` and ``ð``. For Hungarian ``l.d`` / ``l.t͡ʃ`` clusters,
-        call :meth:`liquid` after :meth:`glides`.
+        Used in **CLDF conversion** (e.g. WestOldTurkic and koeblergothic
+        ``Clusters``). Default glide symbols include Gothic intervocalic ``β`` and
+        ``ð``. For Hungarian ``l.d`` / ``l.t͡ʃ`` clusters, use :meth:`liquid`
+        (e.g. UESz-year-origin ``Cluster_L``).
         """
         if len(segments) != len(cv_profile):
             raise ValueError("segments and cv_profile must have the same length")
@@ -139,8 +139,9 @@ class Cluster:
 
         Notes
         -----
-        Used in **CLDF conversion** for Hungarian ``Monogap`` alignments in
-        WestOldTurkic (after :meth:`glides` on the Hungarian side).
+        Used in **CLDF conversion** for Hungarian clustering in UESz-year-origin
+        (``Cluster_L``) and in WestOldTurkic ``Monogap`` alignments on the
+        Hungarian side.
         """
         result = []
         for idx, phoneme in enumerate(segments):

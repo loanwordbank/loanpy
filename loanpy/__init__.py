@@ -6,7 +6,11 @@ mining, edit-distance utilities, and adaptation (substitution plus phonotactic r
 
 from loanpy.adapt import Adapt
 from loanpy.cluster import Cluster
-from loanpy.correspondences import add_separator, get_sound_correspondences
+from loanpy.correspondences import (
+    add_separator,
+    get_sound_correspondences,
+    load_scorer,
+)
 from loanpy.edit import (
     apply_edit,
     edit_distance_matrix,
@@ -33,6 +37,7 @@ __all__ = [
     "get_closest_phonotactics",
     "add_separator",
     "get_sound_correspondences",
+    "load_scorer",
     "path_to_edit_operations",
     "shortest_edit_path",
     "substitute_operations",

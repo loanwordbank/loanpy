@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Cluster.liquid` for Hungarian `l.d` / `l.t͡ʃ` clustering (split from `Cluster.glides`).
 - `Altign` class with `gaps` and cluster-aware `get_score` for global-alignment pipelines.
 - Modular package layout: `cluster`, `align`, `adapt`, `correspondences`, `edit`, `phonotactics`.
+- `load_scorer` — load TOML scorer dicts from ``AbsoluteFrequency`` or ``SoundCorrespondences`` fallback.
 - Public API re-exports in `loanpy.__init__` with `__version__`.
 - Sphinx documentation and Read the Docs configuration.
 - Pytest suite with coverage reporting.
