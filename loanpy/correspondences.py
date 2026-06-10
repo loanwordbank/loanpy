@@ -183,3 +183,146 @@ def get_sound_correspondences(
     }
 
     return correspondences
+
+
+def _lookup_cognateset_ids(
+    cognateset_ids: Mapping[object, object],
+    tok_a: str,
+    tok_b: str,
+    sep: str,
+) -> list[str]:
+    """Return cognate-set ids for a segment pair from a TOML or in-memory mapping."""
+    string_key = f"{tok_a}{sep}{tok_b}"
+    if string_key in cognateset_ids:
+        value = cognateset_ids[string_key]
+    elif (tok_a, tok_b) in cognateset_ids:
+        value = cognateset_ids[(tok_a, tok_b)]
+    else:
+        return []
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value]
+
+
+def _index_cognateset_forms(
+    table: Sequence[Mapping[str, str]],
+    form_col: str,
+) -> dict[str, tuple[str, str]]:
+    """Map cognate-set ids to descendant and ancestor surface forms."""
+    forms: dict[str, tuple[str, str]] = {}
+    for index in range(0, len(table) - 1, 2):
+        descendant_row, ancestor_row = table[index], table[index + 1]
+        cognateset_id = descendant_row["Cognateset_ID"]
+        forms[cognateset_id] = (
+            descendant_row[form_col],
+            ancestor_row[form_col],
+        )
+    return forms
+
+
+class CorrespondenceLookup:
+    """Sound-correspondence statistics tied to the cognate table they were mined from.
+
+    Parameters
+    ----------
+    table:
+        Cognate rows in **descendant, ancestor, descendant, ancestor, …** order
+        (same convention as :func:`get_sound_correspondences`).
+    scorer:
+        Correspondence statistics, typically from :func:`get_sound_correspondences`
+        or loaded from a TOML scorer file written with :func:`add_separator`.
+        Must include a ``Cognateset_IDs`` section for :meth:`etymologies`.
+
+    Examples
+    --------
+    List attested etymology pairs for a segment correspondence::
+
+        import csv
+        from loanpy import CorrespondenceLookup, add_separator, get_sound_correspondences
+
+        with open("cognates.csv", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        stats = get_sound_correspondences(rows, "Uralign")
+        lookup = CorrespondenceLookup(rows, stats)
+        print(lookup.etymologies("t", "d"))
+        # tata < dada, tirili < dirili
+
+    Notes
+    -----
+    Used after mining correspondences from CLDF cognate tables: the TOML scorer
+    records which cognate sets exemplify each segment pair, and this class joins
+    those ids back to orthographic forms in the source table.
+    """
+
+    def __init__(
+        self,
+        table: Sequence[Mapping[str, str]],
+        scorer: Mapping[str, object],
+    ) -> None:
+        self.table = list(table)
+        self.scorer = scorer
+        self._forms_cache: dict[str, dict[str, tuple[str, str]]] = {}
+
+    def _forms_by_cognateset(self, form_col: str) -> dict[str, tuple[str, str]]:
+        if form_col not in self._forms_cache:
+            self._forms_cache[form_col] = _index_cognateset_forms(
+                self.table,
+                form_col,
+            )
+        return self._forms_cache[form_col]
+
+    def etymologies(
+        self,
+        tok_a: str,
+        tok_b: str,
+        *,
+        sep: str = " < ",
+        form_col: str = "form",
+    ) -> str:
+        """Return comma-separated etymology pairs for a sound correspondence.
+
+        Looks up ``tok_a`` and ``tok_b`` in the scorer's ``Cognateset_IDs``
+        mapping, then resolves each id to descendant and ancestor surface forms
+        from :attr:`table`.
+
+        Parameters
+        ----------
+        tok_a:
+            Descendant-language segment (left-hand side of the correspondence).
+        tok_b:
+            Ancestor-language segment (right-hand side).
+        sep:
+            Separator between the two forms in each pair. Default ``" < "``.
+        form_col:
+            Column name holding orthographic forms in :attr:`table`.
+            Default ``"form"``.
+
+        Returns
+        -------
+        str
+            Comma-separated ``descendant{sep}ancestor`` pairs, or an empty
+            string when the correspondence is unknown or has no indexed forms.
+
+        Examples
+        --------
+        >>> lookup = CorrespondenceLookup(table, stats)
+        >>> lookup.etymologies("t", "d")
+        'tata < dada, tirili < dirili'
+        """
+        cognateset_ids = _lookup_cognateset_ids(
+            self.scorer.get("Cognateset_IDs", {}),
+            tok_a,
+            tok_b,
+            sep,
+        )
+        if not cognateset_ids:
+            return ""
+
+        forms_by_id = self._forms_by_cognateset(form_col)
+        pairs: list[str] = []
+        for cognateset_id in cognateset_ids:
+            forms = forms_by_id.get(cognateset_id)
+            if forms is None:
+                continue
+            pairs.append(f"{forms[0]}{sep}{forms[1]}")
+        return ", ".join(pairs)

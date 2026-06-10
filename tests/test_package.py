@@ -6,6 +6,7 @@ import loanpy
 from loanpy import (
     Adapt,
     Cluster,
+    CorrespondenceLookup,
     Uralign,
     add_separator,
     apply_edit,
@@ -29,6 +30,7 @@ def test_public_exports():
     expected = {
         "Adapt",
         "Cluster",
+        "CorrespondenceLookup",
         "Uralign",
         "add_separator",
         "apply_edit",

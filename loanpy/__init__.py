@@ -7,6 +7,7 @@ mining, edit-distance utilities, and adaptation (substitution plus phonotactic r
 from loanpy.adapt import Adapt
 from loanpy.cluster import Cluster
 from loanpy.correspondences import (
+    CorrespondenceLookup,
     add_separator,
     get_sound_correspondences,
     load_scorer,
@@ -28,6 +29,7 @@ __all__ = [
     "Adapt",
     "Altign",
     "Cluster",
+    "CorrespondenceLookup",
     "Uralign",
     "__version__",
     "apply_edit",

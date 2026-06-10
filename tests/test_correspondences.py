@@ -3,6 +3,7 @@
 import logging
 
 from loanpy.correspondences import (
+    CorrespondenceLookup,
     _is_alternating_language_sequence,
     add_separator,
     get_sound_correspondences,
@@ -10,11 +11,12 @@ from loanpy.correspondences import (
 )
 
 
-def _row(lang, aligned, cog_id="cs1"):
+def _row(lang, aligned, cog_id="cs1", form=""):
     return {
         "Language_ID": lang,
         "Uralign": aligned,
         "Cognateset_ID": cog_id,
+        "form": form,
     }
 
 
@@ -193,3 +195,69 @@ class TestGetSoundCorrespondences:
         ]
         result = get_sound_correspondences(table, "Alignment")
         assert ("k", "k") in result["AbsoluteFrequency"]
+
+
+class TestCorrespondenceLookup:
+    @staticmethod
+    def _example_table():
+        return [
+            _row("desc", "t a t a", "1", "tata"),
+            _row("anc", "d a d a", "1", "dada"),
+            _row("desc", "t i r i l i", "2", "tirili"),
+            _row("anc", "d i r i l i", "2", "dirili"),
+        ]
+
+    def test_etymologies_from_mined_correspondences(self):
+        table = self._example_table()
+        stats = get_sound_correspondences(table, "Uralign")
+        lookup = CorrespondenceLookup(table, stats)
+        assert lookup.etymologies("t", "d") == "tata < dada, tirili < dirili"
+
+    def test_etymologies_from_toml_style_scorer(self):
+        table = self._example_table()
+        stats = add_separator(get_sound_correspondences(table, "Uralign"))
+        lookup = CorrespondenceLookup(table, stats)
+        assert lookup.etymologies("t", "d") == "tata < dada, tirili < dirili"
+
+    def test_unknown_correspondence_returns_empty_string(self):
+        table = self._example_table()
+        lookup = CorrespondenceLookup(table, {"Cognateset_IDs": {}})
+        assert lookup.etymologies("x", "y") == ""
+
+    def test_custom_separator(self):
+        table = self._example_table()
+        stats = get_sound_correspondences(table, "Uralign")
+        lookup = CorrespondenceLookup(table, stats)
+        assert lookup.etymologies("t", "d", sep="|") == "tata|dada, tirili|dirili"
+
+    def test_custom_form_column(self):
+        table = [
+            {
+                "Language_ID": "desc",
+                "Uralign": "t a",
+                "Cognateset_ID": "1",
+                "Form": "tata",
+            },
+            {
+                "Language_ID": "anc",
+                "Uralign": "d a",
+                "Cognateset_ID": "1",
+                "Form": "dada",
+            },
+        ]
+        stats = get_sound_correspondences(table, "Uralign")
+        lookup = CorrespondenceLookup(table, stats)
+        assert lookup.etymologies("t", "d", form_col="Form") == "tata < dada"
+
+    def test_skips_missing_cognateset_ids(self):
+        table = self._example_table()
+        scorer = {"Cognateset_IDs": {("t", "d"): ["1", "missing"]}}
+        lookup = CorrespondenceLookup(table, scorer)
+        assert lookup.etymologies("t", "d") == "tata < dada"
+
+    def test_stores_table_and_scorer(self):
+        table = self._example_table()
+        stats = get_sound_correspondences(table, "Uralign")
+        lookup = CorrespondenceLookup(table, stats)
+        assert lookup.table == table
+        assert lookup.scorer is stats

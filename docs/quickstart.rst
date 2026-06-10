@@ -38,6 +38,20 @@ Load a TOML scorer written with :func:`add_separator`::
        data = tomllib.load(f)
    scorer = load_scorer(data, missing=-1000, imputed=12)
 
+List attested etymologies for a segment pair
+--------------------------------------------
+
+After mining correspondences, join cognate-set ids back to orthographic forms::
+
+   from loanpy import CorrespondenceLookup, get_sound_correspondences
+
+   stats = get_sound_correspondences(rows, aligned_col="Uralign")
+   lookup = CorrespondenceLookup(rows, stats)
+   print(lookup.etymologies("t", "d"))
+   # tata < dada, tirili < dirili
+
+Use ``form_col="Form"`` when the cognate table follows CLDF column naming.
+
 Score an alignment
 ------------------
 
