@@ -237,7 +237,7 @@ class TestCorrespondenceLookup:
         self._write_scorer(scorer_path, stats)
         lookup = CorrespondenceLookup(table_path, scorer_path)
         assert lookup.etymologies("t", "d", form_col="Form") == (
-            "tata < dada (UEW № 1), tirili < dirili (UEW № 2)"
+            "tata (UEW № 1) < dada (1), tirili (2) < dirili (2)"
         )
 
     def test_etymologies_from_toml_style_scorer(self, tmp_path):
@@ -249,7 +249,7 @@ class TestCorrespondenceLookup:
         self._write_scorer(scorer_path, stats)
         lookup = CorrespondenceLookup(table_path, scorer_path)
         assert lookup.etymologies("t", "d", form_col="Form") == (
-            "tata < dada (UEW № 1), tirili < dirili (UEW № 2)"
+            "tata (UEW № 1) < dada (1), tirili (2) < dirili (2)"
         )
 
     def test_unknown_correspondence_returns_empty_string(self, tmp_path):
@@ -270,7 +270,7 @@ class TestCorrespondenceLookup:
         self._write_scorer(scorer_path, stats)
         lookup = CorrespondenceLookup(table_path, scorer_path)
         assert lookup.etymologies("t", "d", sep="|", form_col="Form") == (
-            "tata|dada (UEW № 1), tirili|dirili (UEW № 2)"
+            "tata (UEW № 1)|dada (1), tirili (2)|dirili (2)"
         )
 
     def test_custom_form_column(self, tmp_path):
@@ -296,7 +296,7 @@ class TestCorrespondenceLookup:
         self._write_table(table_path, table)
         self._write_scorer(scorer_path, stats)
         lookup = CorrespondenceLookup(table_path, scorer_path)
-        assert lookup.etymologies("t", "d", form_col="Form") == "tata < dada (UEW № 1)"
+        assert lookup.etymologies("t", "d", form_col="Form") == "tata (UEW № 1) < dada (1)"
 
     def test_skips_missing_cognateset_ids(self, tmp_path):
         table = self._example_table()
@@ -308,7 +308,7 @@ class TestCorrespondenceLookup:
             encoding="utf-8",
         )
         lookup = CorrespondenceLookup(table_path, scorer_path)
-        assert lookup.etymologies("t", "d", form_col="Form") == "tata < dada (UEW № 1)"
+        assert lookup.etymologies("t", "d", form_col="Form") == "tata (UEW № 1) < dada (1)"
 
     def test_stores_table_and_scorer_paths(self, tmp_path):
         table = self._example_table()

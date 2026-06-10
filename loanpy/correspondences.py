@@ -374,21 +374,21 @@ class CorrespondenceLookup:
             Column name holding orthographic forms in :attr:`table`.
             Default ``"form"``.
         id_col:
-            Column name holding the entry id appended as ``(UEW № …)``.
-            Default ``"UEW_ID"``. Pass ``""`` to omit ids.
+            Column name holding the entry id shown in parentheses after each
+            form. Default ``"UEW_ID"``. Pass ``""`` to omit ids.
 
         Returns
         -------
         str
-            Comma-separated ``descendant{sep}ancestor (UEW № id)`` pairs, or an
-            empty string when the correspondence is unknown or has no indexed
-            forms.
+            Comma-separated ``desc (UEW № id){sep}anc (id)`` pairs. Only the
+            first parenthesis in the output includes the ``UEW №`` prefix;
+            later ones contain the id alone.
 
         Examples
         --------
         >>> lookup = CorrespondenceLookup(table_path, scorer_path)
         >>> lookup.etymologies("t", "d", form_col="Form")
-        'tata < dada (UEW № 1), tirili < dirili (UEW № 2)'
+        'tata (UEW № 1) < dada (1), tirili (2) < dirili (2)'
         """
         cognateset_ids = _lookup_cognateset_ids(
             self.scorer.get("Cognateset_IDs", {}),
@@ -401,13 +401,20 @@ class CorrespondenceLookup:
 
         forms_by_id = self._forms_by_cognateset(form_col, id_col)
         pairs: list[str] = []
+        first_id = True
         for cognateset_id in cognateset_ids:
             entry = forms_by_id.get(cognateset_id)
             if entry is None:
                 continue
             desc_form, anc_form, entry_id = entry
-            pair = f"{desc_form}{sep}{anc_form}"
             if id_col and entry_id:
-                pair += f" (UEW № {entry_id})"
+                if first_id:
+                    desc_part = f"{desc_form} (UEW № {entry_id})"
+                    first_id = False
+                else:
+                    desc_part = f"{desc_form} ({entry_id})"
+                pair = f"{desc_part}{sep}{anc_form} ({entry_id})"
+            else:
+                pair = f"{desc_form}{sep}{anc_form}"
             pairs.append(pair)
         return ", ".join(pairs)

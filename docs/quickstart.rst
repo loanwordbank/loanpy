@@ -50,7 +50,7 @@ After mining correspondences, join cognate-set ids back to orthographic forms::
        "scorers/Uralign-UEW.toml",
    )
    print(lookup.etymologies("ɡː", "ŋ.k", form_col="Form"))
-   # aggód < aŋke (UEW № 18), …
+   # aggód (UEW № 18) < aŋke (18), …
 
 Use ``form_col="Form"`` when the cognate table follows CLDF column naming.
 
