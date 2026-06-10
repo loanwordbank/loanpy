@@ -43,12 +43,14 @@ List attested etymologies for a segment pair
 
 After mining correspondences, join cognate-set ids back to orthographic forms::
 
-   from loanpy import CorrespondenceLookup, get_sound_correspondences
+   from loanpy import CorrespondenceLookup
 
-   stats = get_sound_correspondences(rows, aligned_col="Uralign")
-   lookup = CorrespondenceLookup(rows, stats)
-   print(lookup.etymologies("t", "d"))
-   # tata < dada, tirili < dirili
+   lookup = CorrespondenceLookup(
+       "data/UEW-hu/cldf/cognates.csv",
+       "scorers/Uralign-UEW.toml",
+   )
+   print(lookup.etymologies("ɡː", "ŋ.k", form_col="Form"))
+   # aggód < aŋke (UEW № 18), …
 
 Use ``form_col="Form"`` when the cognate table follows CLDF column naming.
 

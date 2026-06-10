@@ -10,6 +10,7 @@ from loanpy.correspondences import (
     CorrespondenceLookup,
     add_separator,
     get_sound_correspondences,
+    load_cognate_table,
     load_scorer,
 )
 from loanpy.edit import (
@@ -39,6 +40,7 @@ __all__ = [
     "get_closest_phonotactics",
     "add_separator",
     "get_sound_correspondences",
+    "load_cognate_table",
     "load_scorer",
     "path_to_edit_operations",
     "shortest_edit_path",

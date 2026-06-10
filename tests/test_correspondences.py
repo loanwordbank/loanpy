@@ -1,5 +1,7 @@
 """Tests for loanpy.correspondences."""
 
+import csv
+import io
 import logging
 
 from loanpy.correspondences import (
@@ -7,16 +9,18 @@ from loanpy.correspondences import (
     _is_alternating_language_sequence,
     add_separator,
     get_sound_correspondences,
+    load_cognate_table,
     load_scorer,
 )
 
 
-def _row(lang, aligned, cog_id="cs1", form=""):
+def _row(lang, aligned, cog_id="cs1", form="", uew_id=""):
     return {
         "Language_ID": lang,
         "Uralign": aligned,
         "Cognateset_ID": cog_id,
-        "form": form,
+        "Form": form,
+        "UEW_ID": uew_id,
     }
 
 
@@ -201,63 +205,150 @@ class TestCorrespondenceLookup:
     @staticmethod
     def _example_table():
         return [
-            _row("desc", "t a t a", "1", "tata"),
-            _row("anc", "d a d a", "1", "dada"),
-            _row("desc", "t i r i l i", "2", "tirili"),
-            _row("anc", "d i r i l i", "2", "dirili"),
+            _row("desc", "t a t a", "1", "tata", "1"),
+            _row("anc", "d a d a", "1", "dada", "1"),
+            _row("desc", "t i r i l i", "2", "tirili", "2"),
+            _row("anc", "d i r i l i", "2", "dirili", "2"),
         ]
 
-    def test_etymologies_from_mined_correspondences(self):
+    @staticmethod
+    def _write_table(path, table):
+        fieldnames = list(table[0].keys())
+        with path.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(table)
+
+    @staticmethod
+    def _write_scorer(path, stats):
+        exported = add_separator(stats)
+        lines = ["[Cognateset_IDs]"]
+        for key, ids in exported["Cognateset_IDs"].items():
+            ids_str = ", ".join(f'"{item}"' for item in ids)
+            lines.append(f'"{key}" = [{ids_str}]')
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def test_etymologies_from_mined_correspondences(self, tmp_path):
         table = self._example_table()
         stats = get_sound_correspondences(table, "Uralign")
-        lookup = CorrespondenceLookup(table, stats)
-        assert lookup.etymologies("t", "d") == "tata < dada, tirili < dirili"
+        table_path = tmp_path / "cognates.csv"
+        scorer_path = tmp_path / "scorer.toml"
+        self._write_table(table_path, table)
+        self._write_scorer(scorer_path, stats)
+        lookup = CorrespondenceLookup(table_path, scorer_path)
+        assert lookup.etymologies("t", "d", form_col="Form") == (
+            "tata < dada (UEW № 1), tirili < dirili (UEW № 2)"
+        )
 
-    def test_etymologies_from_toml_style_scorer(self):
+    def test_etymologies_from_toml_style_scorer(self, tmp_path):
         table = self._example_table()
-        stats = add_separator(get_sound_correspondences(table, "Uralign"))
-        lookup = CorrespondenceLookup(table, stats)
-        assert lookup.etymologies("t", "d") == "tata < dada, tirili < dirili"
+        stats = get_sound_correspondences(table, "Uralign")
+        table_path = tmp_path / "cognates.csv"
+        scorer_path = tmp_path / "scorer.toml"
+        self._write_table(table_path, table)
+        self._write_scorer(scorer_path, stats)
+        lookup = CorrespondenceLookup(table_path, scorer_path)
+        assert lookup.etymologies("t", "d", form_col="Form") == (
+            "tata < dada (UEW № 1), tirili < dirili (UEW № 2)"
+        )
 
-    def test_unknown_correspondence_returns_empty_string(self):
+    def test_unknown_correspondence_returns_empty_string(self, tmp_path):
         table = self._example_table()
-        lookup = CorrespondenceLookup(table, {"Cognateset_IDs": {}})
+        table_path = tmp_path / "cognates.csv"
+        scorer_path = tmp_path / "scorer.toml"
+        self._write_table(table_path, table)
+        scorer_path.write_text("[Cognateset_IDs]\n", encoding="utf-8")
+        lookup = CorrespondenceLookup(table_path, scorer_path)
         assert lookup.etymologies("x", "y") == ""
 
-    def test_custom_separator(self):
+    def test_custom_separator(self, tmp_path):
         table = self._example_table()
         stats = get_sound_correspondences(table, "Uralign")
-        lookup = CorrespondenceLookup(table, stats)
-        assert lookup.etymologies("t", "d", sep="|") == "tata|dada, tirili|dirili"
+        table_path = tmp_path / "cognates.csv"
+        scorer_path = tmp_path / "scorer.toml"
+        self._write_table(table_path, table)
+        self._write_scorer(scorer_path, stats)
+        lookup = CorrespondenceLookup(table_path, scorer_path)
+        assert lookup.etymologies("t", "d", sep="|", form_col="Form") == (
+            "tata|dada (UEW № 1), tirili|dirili (UEW № 2)"
+        )
 
-    def test_custom_form_column(self):
+    def test_custom_form_column(self, tmp_path):
         table = [
             {
                 "Language_ID": "desc",
                 "Uralign": "t a",
                 "Cognateset_ID": "1",
                 "Form": "tata",
+                "UEW_ID": "1",
             },
             {
                 "Language_ID": "anc",
                 "Uralign": "d a",
                 "Cognateset_ID": "1",
                 "Form": "dada",
+                "UEW_ID": "1",
             },
         ]
         stats = get_sound_correspondences(table, "Uralign")
-        lookup = CorrespondenceLookup(table, stats)
-        assert lookup.etymologies("t", "d", form_col="Form") == "tata < dada"
+        table_path = tmp_path / "cognates.csv"
+        scorer_path = tmp_path / "scorer.toml"
+        self._write_table(table_path, table)
+        self._write_scorer(scorer_path, stats)
+        lookup = CorrespondenceLookup(table_path, scorer_path)
+        assert lookup.etymologies("t", "d", form_col="Form") == "tata < dada (UEW № 1)"
 
-    def test_skips_missing_cognateset_ids(self):
+    def test_skips_missing_cognateset_ids(self, tmp_path):
         table = self._example_table()
-        scorer = {"Cognateset_IDs": {("t", "d"): ["1", "missing"]}}
-        lookup = CorrespondenceLookup(table, scorer)
-        assert lookup.etymologies("t", "d") == "tata < dada"
+        table_path = tmp_path / "cognates.csv"
+        scorer_path = tmp_path / "scorer.toml"
+        self._write_table(table_path, table)
+        scorer_path.write_text(
+            '[Cognateset_IDs]\n"t < d" = ["1", "missing"]\n',
+            encoding="utf-8",
+        )
+        lookup = CorrespondenceLookup(table_path, scorer_path)
+        assert lookup.etymologies("t", "d", form_col="Form") == "tata < dada (UEW № 1)"
 
-    def test_stores_table_and_scorer(self):
+    def test_stores_table_and_scorer_paths(self, tmp_path):
         table = self._example_table()
         stats = get_sound_correspondences(table, "Uralign")
-        lookup = CorrespondenceLookup(table, stats)
+        table_path = tmp_path / "cognates.csv"
+        scorer_path = tmp_path / "scorer.toml"
+        self._write_table(table_path, table)
+        self._write_scorer(scorer_path, stats)
+        lookup = CorrespondenceLookup(table_path, scorer_path)
+        assert lookup.table_path == table_path
+        assert lookup.scorer_path == scorer_path
         assert lookup.table == table
-        assert lookup.scorer is stats
+
+
+class TestLoadCognateTable:
+    def test_returns_rows_when_form_column_present(self):
+        csv_text = """Language_ID,Uralign,Cognateset_ID,Form
+desc,t a,1,tata
+anc,d a,1,dada
+"""
+        path = io.StringIO(csv_text)
+        rows = list(csv.DictReader(path))
+        assert rows[0]["Form"] == "tata"
+
+    def test_joins_forms_from_sibling_forms_csv(self, tmp_path):
+        cognates = tmp_path / "cognates.csv"
+        forms = tmp_path / "forms.csv"
+        cognates.write_text(
+            "Form_ID,Language_ID,Uralign,Cognateset_ID\n"
+            "f1,desc,t a,1\n"
+            "f2,anc,d a,1\n",
+            encoding="utf-8",
+        )
+        forms.write_text(
+            "ID,Form,UEW_ID\n"
+            "f1,tata,1\n"
+            "f2,dada,1\n",
+            encoding="utf-8",
+        )
+        rows = load_cognate_table(cognates)
+        assert rows[0]["Form"] == "tata"
+        assert rows[1]["Form"] == "dada"
+        assert rows[0]["UEW_ID"] == "1"

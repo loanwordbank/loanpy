@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import csv
 import logging
+import tomllib
 from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 
 
 def _is_alternating_language_sequence(
@@ -185,6 +188,61 @@ def get_sound_correspondences(
     return correspondences
 
 
+def load_cognate_table(
+    table_path: str | Path,
+    *,
+    forms_path: str | Path | None = None,
+    form_col: str = "Form",
+    form_id_col: str = "Form_ID",
+    id_col: str = "UEW_ID",
+) -> list[dict[str, str]]:
+    """Load cognate rows from a CLDF-style CSV, joining surface forms if needed.
+
+    When ``form_col`` or ``id_col`` is absent from the table, looks up each row's
+    ``form_id_col`` in ``forms_path`` (default: ``forms.csv`` beside the table)
+    and copies the missing columns onto the row in place.
+
+    Parameters
+    ----------
+    table_path:
+        Path to the cognate table (e.g. ``cognates.csv``).
+    forms_path:
+        Path to ``forms.csv``. Defaults to ``table_path``'s parent directory.
+    form_col:
+        Column holding orthographic forms. Default ``"Form"``.
+    form_id_col:
+        Foreign-key column referencing ``forms.csv::ID``. Default ``"Form_ID"``.
+    id_col:
+        Column holding the Uralonet entry id. Default ``"UEW_ID"``.
+    """
+    table_path = Path(table_path)
+    rows = list(csv.DictReader(table_path.open(encoding="utf-8")))
+    if not rows:
+        return rows
+
+    needs_form = form_col not in rows[0]
+    needs_id = bool(id_col) and id_col not in rows[0]
+    if not needs_form and not needs_id:
+        return rows
+    if form_id_col not in rows[0]:
+        return rows
+
+    if forms_path is None:
+        forms_path = table_path.parent / "forms.csv"
+    forms_path = Path(forms_path)
+    forms = {
+        row["ID"]: row
+        for row in csv.DictReader(forms_path.open(encoding="utf-8"))
+    }
+    for row in rows:
+        form_row = forms[row[form_id_col]]
+        if needs_form:
+            row[form_col] = form_row[form_col]
+        if needs_id and id_col in form_row:
+            row[id_col] = form_row[id_col]
+    return rows
+
+
 def _lookup_cognateset_ids(
     cognateset_ids: Mapping[object, object],
     tok_a: str,
@@ -207,15 +265,18 @@ def _lookup_cognateset_ids(
 def _index_cognateset_forms(
     table: Sequence[Mapping[str, str]],
     form_col: str,
-) -> dict[str, tuple[str, str]]:
-    """Map cognate-set ids to descendant and ancestor surface forms."""
-    forms: dict[str, tuple[str, str]] = {}
+    id_col: str = "UEW_ID",
+) -> dict[str, tuple[str, str, str]]:
+    """Map cognate-set ids to descendant form, ancestor form, and entry id."""
+    forms: dict[str, tuple[str, str, str]] = {}
     for index in range(0, len(table) - 1, 2):
         descendant_row, ancestor_row = table[index], table[index + 1]
         cognateset_id = descendant_row["Cognateset_ID"]
+        entry_id = descendant_row.get(id_col, "") if id_col else ""
         forms[cognateset_id] = (
             descendant_row[form_col],
             ancestor_row[form_col],
+            entry_id,
         )
     return forms
 
@@ -225,27 +286,28 @@ class CorrespondenceLookup:
 
     Parameters
     ----------
-    table:
-        Cognate rows in **descendant, ancestor, descendant, ancestor, …** order
-        (same convention as :func:`get_sound_correspondences`).
-    scorer:
-        Correspondence statistics, typically from :func:`get_sound_correspondences`
-        or loaded from a TOML scorer file written with :func:`add_separator`.
-        Must include a ``Cognateset_IDs`` section for :meth:`etymologies`.
+    table_path:
+        Path to the cognate CSV (e.g. CLDF ``cognates.csv``). Rows must follow
+        **descendant, ancestor, descendant, ancestor, …** order.
+    scorer_path:
+        Path to a TOML scorer written with :func:`add_separator`. Must include
+        a ``Cognateset_IDs`` section for :meth:`etymologies`.
+    forms_path:
+        Optional path to ``forms.csv`` when orthographic forms are not already
+        present in the cognate table. Defaults to ``forms.csv`` beside
+        ``table_path``.
 
     Examples
     --------
     List attested etymology pairs for a segment correspondence::
 
-        import csv
-        from loanpy import CorrespondenceLookup, add_separator, get_sound_correspondences
+        from loanpy import CorrespondenceLookup
 
-        with open("cognates.csv", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
-        stats = get_sound_correspondences(rows, "Uralign")
-        lookup = CorrespondenceLookup(rows, stats)
-        print(lookup.etymologies("t", "d"))
-        # tata < dada, tirili < dirili
+        lookup = CorrespondenceLookup(
+            "data/UEW-hu/cldf/cognates.csv",
+            "scorers/Uralign-UEW.toml",
+        )
+        print(lookup.etymologies("ɡː", "ŋ.k", form_col="Form"))
 
     Notes
     -----
@@ -256,20 +318,34 @@ class CorrespondenceLookup:
 
     def __init__(
         self,
-        table: Sequence[Mapping[str, str]],
-        scorer: Mapping[str, object],
+        table_path: str | Path,
+        scorer_path: str | Path,
+        *,
+        forms_path: str | Path | None = None,
     ) -> None:
-        self.table = list(table)
-        self.scorer = scorer
-        self._forms_cache: dict[str, dict[str, tuple[str, str]]] = {}
+        self.table_path = Path(table_path)
+        self.scorer_path = Path(scorer_path)
+        self.table = load_cognate_table(
+            self.table_path,
+            forms_path=forms_path,
+        )
+        with self.scorer_path.open("rb") as f:
+            self.scorer = tomllib.load(f)
+        self._forms_cache: dict[str, dict[str, tuple[str, str, str]]] = {}
 
-    def _forms_by_cognateset(self, form_col: str) -> dict[str, tuple[str, str]]:
-        if form_col not in self._forms_cache:
-            self._forms_cache[form_col] = _index_cognateset_forms(
+    def _forms_by_cognateset(
+        self,
+        form_col: str,
+        id_col: str = "UEW_ID",
+    ) -> dict[str, tuple[str, str, str]]:
+        cache_key = f"{form_col}\0{id_col}"
+        if cache_key not in self._forms_cache:
+            self._forms_cache[cache_key] = _index_cognateset_forms(
                 self.table,
                 form_col,
+                id_col,
             )
-        return self._forms_cache[form_col]
+        return self._forms_cache[cache_key]
 
     def etymologies(
         self,
@@ -278,6 +354,7 @@ class CorrespondenceLookup:
         *,
         sep: str = " < ",
         form_col: str = "form",
+        id_col: str = "UEW_ID",
     ) -> str:
         """Return comma-separated etymology pairs for a sound correspondence.
 
@@ -296,33 +373,41 @@ class CorrespondenceLookup:
         form_col:
             Column name holding orthographic forms in :attr:`table`.
             Default ``"form"``.
+        id_col:
+            Column name holding the entry id appended as ``(UEW № …)``.
+            Default ``"UEW_ID"``. Pass ``""`` to omit ids.
 
         Returns
         -------
         str
-            Comma-separated ``descendant{sep}ancestor`` pairs, or an empty
-            string when the correspondence is unknown or has no indexed forms.
+            Comma-separated ``descendant{sep}ancestor (UEW № id)`` pairs, or an
+            empty string when the correspondence is unknown or has no indexed
+            forms.
 
         Examples
         --------
-        >>> lookup = CorrespondenceLookup(table, stats)
-        >>> lookup.etymologies("t", "d")
-        'tata < dada, tirili < dirili'
+        >>> lookup = CorrespondenceLookup(table_path, scorer_path)
+        >>> lookup.etymologies("t", "d", form_col="Form")
+        'tata < dada (UEW № 1), tirili < dirili (UEW № 2)'
         """
         cognateset_ids = _lookup_cognateset_ids(
             self.scorer.get("Cognateset_IDs", {}),
             tok_a,
             tok_b,
-            sep,
+            " < ",
         )
         if not cognateset_ids:
             return ""
 
-        forms_by_id = self._forms_by_cognateset(form_col)
+        forms_by_id = self._forms_by_cognateset(form_col, id_col)
         pairs: list[str] = []
         for cognateset_id in cognateset_ids:
-            forms = forms_by_id.get(cognateset_id)
-            if forms is None:
+            entry = forms_by_id.get(cognateset_id)
+            if entry is None:
                 continue
-            pairs.append(f"{forms[0]}{sep}{forms[1]}")
+            desc_form, anc_form, entry_id = entry
+            pair = f"{desc_form}{sep}{anc_form}"
+            if id_col and entry_id:
+                pair += f" (UEW № {entry_id})"
+            pairs.append(pair)
         return ", ".join(pairs)
